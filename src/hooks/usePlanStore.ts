@@ -3,6 +3,8 @@ import type { AppState, TaskCompletion } from '../types';
 import { formatDate } from '../utils/planUtils';
 
 const STORAGE_KEY = 'ml-plan-tracker-state';
+const BACKUP_KEY = 'ml-plan-tracker-state-backup';
+const EXPORT_VERSION = 1;
 
 const defaultState = (): AppState => ({
   startDate: formatDate(new Date()),
@@ -13,18 +15,67 @@ const defaultState = (): AppState => ({
   phase0Done: {},
 });
 
-function loadState(): AppState {
+function parseStoredState(raw: string): AppState | null {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { ...defaultState(), ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    if (typeof parsed.startDate !== 'string') return null;
+    return { ...defaultState(), ...parsed };
   } catch {
-    /* ignore */
+    return null;
   }
+}
+
+function loadState(): AppState {
+  const primary = localStorage.getItem(STORAGE_KEY);
+  if (primary) {
+    const state = parseStoredState(primary);
+    if (state) return state;
+  }
+
+  const backup = localStorage.getItem(BACKUP_KEY);
+  if (backup) {
+    const state = parseStoredState(backup);
+    if (state) {
+      saveState(state);
+      return state;
+    }
+  }
+
   return defaultState();
 }
 
 function saveState(state: AppState) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  const serialized = JSON.stringify(state);
+  localStorage.setItem(STORAGE_KEY, serialized);
+  localStorage.setItem(BACKUP_KEY, serialized);
+}
+
+export function createBackupPayload(state: AppState) {
+  return {
+    version: EXPORT_VERSION,
+    exportedAt: new Date().toISOString(),
+    app: 'ml-plan-tracker',
+    data: state,
+  };
+}
+
+export function parseBackupPayload(raw: string): AppState {
+  const parsed = JSON.parse(raw);
+  const data = parsed?.data ?? parsed;
+  const state = parseStoredState(JSON.stringify(data));
+  if (!state) throw new Error('Invalid backup file');
+  return state;
+}
+
+export function downloadBackup(state: AppState) {
+  const payload = createBackupPayload(state);
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `ml-plan-tracker-backup-${state.startDate}.json`;
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
 
 export function usePlanStore() {
@@ -110,6 +161,11 @@ export function usePlanStore() {
     saveState(fresh);
   }, []);
 
+  const importState = useCallback((next: AppState) => {
+    setState(next);
+    saveState(next);
+  }, []);
+
   return {
     state,
     setStartDate,
@@ -118,5 +174,6 @@ export function usePlanStore() {
     setDayMeta,
     toggleMapItem,
     resetState,
+    importState,
   };
 }

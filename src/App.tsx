@@ -16,7 +16,8 @@ const tabs: { id: Tab; label: string; icon: string }[] = [
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('today');
-  const { state, setStartDate, toggleTask, updateTask, setDayMeta, toggleMapItem, resetState } = usePlanStore();
+  const { state, setStartDate, toggleTask, updateTask, setDayMeta, toggleMapItem, resetState, importState } =
+    usePlanStore();
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl px-4 py-6 pb-24">
@@ -55,7 +56,13 @@ export default function App() {
         )}
         {tab === 'week' && <WeekView state={state} toggleMapItem={toggleMapItem} />}
         {tab === 'settings' && (
-          <SettingsView startDate={state.startDate} setStartDate={setStartDate} resetState={resetState} />
+          <SettingsView
+            state={state}
+            startDate={state.startDate}
+            setStartDate={setStartDate}
+            importState={importState}
+            resetState={resetState}
+          />
         )}
       </main>
 
