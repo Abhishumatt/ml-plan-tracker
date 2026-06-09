@@ -16,7 +16,7 @@ A daily tracker for the 18-week ML mastery & placement plan. Tracks what needs t
 ## Run on any machine
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Abhishumatt/ml-plan-tracker.git
 cd ml-plan-tracker
 npm install
 npm run dev
@@ -37,6 +37,6 @@ The static build in `dist/` can be deployed to GitHub Pages, Netlify, Vercel, or
 
 ```bash
 # From this directory, after creating an empty repo on GitHub:
-git remote add origin https://github.com/<your-username>/ml-plan-tracker.git
+git remote add origin https://github.com/Abhishumatt/ml-plan-tracker.git
 git push -u origin main
 ```
