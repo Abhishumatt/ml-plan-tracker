@@ -3,7 +3,9 @@ import { Dashboard } from './components/Dashboard';
 import { SettingsView } from './components/SettingsView';
 import { TodayView } from './components/TodayView';
 import { WeekView } from './components/WeekView';
+import { useCloudSync } from './hooks/useCloudSync';
 import { usePlanStore } from './hooks/usePlanStore';
+import { isCloudSyncEnabled } from './lib/syncConfig';
 
 type Tab = 'dashboard' | 'today' | 'week' | 'settings';
 
@@ -18,6 +20,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('today');
   const { state, setStartDate, toggleTask, updateTask, setDayMeta, toggleMapItem, resetState, importState } =
     usePlanStore();
+  const { status: syncStatus, error: syncError, syncNow } = useCloudSync(state, importState);
 
   return (
     <div className="mx-auto min-h-screen max-w-4xl px-4 py-6 pb-24">
@@ -25,6 +28,11 @@ export default function App() {
         <div>
           <p className="text-xs font-medium uppercase tracking-widest text-indigo-400">ML Mastery</p>
           <h1 className="text-lg font-semibold text-white">18-Week Tracker</h1>
+          {isCloudSyncEnabled() && (
+            <p className="mt-0.5 text-[10px] text-[var(--color-muted)]">
+              {syncStatus === 'syncing' ? '☁︎ Syncing…' : syncStatus === 'error' ? '☁︎ Sync issue' : '☁︎ Synced'}
+            </p>
+          )}
         </div>
         <div className="hidden gap-1 md:flex">
           {tabs.map((t) => (
@@ -62,6 +70,9 @@ export default function App() {
             setStartDate={setStartDate}
             importState={importState}
             resetState={resetState}
+            syncNow={syncNow}
+            syncStatus={syncStatus}
+            syncError={syncError}
           />
         )}
       </main>
